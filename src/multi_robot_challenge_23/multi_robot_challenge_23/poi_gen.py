@@ -67,9 +67,18 @@ class PoiGen(Node):
         self.get_logger().info(f"[poi_gen] map received: {msg.info.width}x{msg.info.height} @ {msg.info.resolution:.3f} m/px; waypoints={len(self.seq)}; spacing={self.spacing:.2f}")
 
         # split the generated waypoints, first half -> tb3_0, second half -> tb3_1
-        half = len(self.seq) // 2
-        self.seq0 = self.seq[:half]
-        self.seq1 = self.seq[half:]
+        # half = len(self.seq) // 2
+        # self.seq0 = self.seq[:half]
+        # self.seq1 = self.seq[half:]
+
+        # split the generated waypoints along the y=0 axis
+        self.seq0 = [p for p in self.seq if p.y >= 0.0]
+        self.seq1 = [p for p in self.seq if p.y < 0.0]
+
+        # self.get_logger().info("Waypoints for tb3_0:")  
+        # self.get_logger().info(str(self.seq0))
+        # self.get_logger().info("Waypoints for tb3_1:")
+        # self.get_logger().info(str(self.seq1))
 
         self.idx = 0
         self.waiting_ack = False
@@ -230,49 +239,49 @@ class PoiGen(Node):
 
         # --------------------------------
 
-        # Does the vector of two Points intersect any obstacle in the free mask?
-        def collision(vector_p1: Point, vector_p2: Point):
-            x1 = vector_p1.x
-            y1 = vector_p1.y
-            x2 = vector_p2.x
-            y2 = vector_p2.y
+        # # Does the vector of two Points intersect any obstacle in the free mask?
+        # def collision(vector_p1: Point, vector_p2: Point):
+        #     x1 = vector_p1.x
+        #     y1 = vector_p1.y
+        #     x2 = vector_p2.x
+        #     y2 = vector_p2.y
 
-            dx = x2 - x1
-            dy = y2 - y1
-            dist = math.hypot(dx, dy)
-            steps = max(1, int(math.ceil(dist / res)))
+        #     dx = x2 - x1
+        #     dy = y2 - y1
+        #     dist = math.hypot(dx, dy)
+        #     steps = max(1, int(math.ceil(dist / res)))
 
-            for step in range(steps + 1):
-                t = step / steps
-                x = x1 + t * dx
-                y = y1 + t * dy
+        #     for step in range(steps + 1):
+        #         t = step / steps
+        #         x = x1 + t * dx
+        #         y = y1 + t * dy
 
-                c = int((x - ox) / res)
-                r = int((y - oy) / res)
+        #         c = int((x - ox) / res)
+        #         r = int((y - oy) / res)
 
-                if 0 <= r < height and 0 <= c < width:
-                    i = idx(r, c)
-                    if not free[i]:
-                        return True
+        #         if 0 <= r < height and 0 <= c < width:
+        #             i = idx(r, c)
+        #             if not free[i]:
+        #                 return True
 
-            return False
+        #     return False
         
-        weighted_graph = [ [len(waypoints)] [len(waypoints)] ]
+        # weighted_graph = [ [len(waypoints)] [len(waypoints)] ]
 
-        for p in waypoints:
-            row = []
-            for q in waypoints:
-                if p == q:
-                    row.append(0.0)
-                elif collision(p, q):
-                    row.append(math.inf)
-                else:
-                    dist = math.hypot(q.x - p.x, q.y - p.y)
-                    row.append(dist)
-            weighted_graph.append(row)
+        # for p in waypoints:
+        #     row = []
+        #     for q in waypoints:
+        #         if p == q:
+        #             row.append(0.0)
+        #         elif collision(p, q):
+        #             row.append(math.inf)
+        #         else:
+        #             dist = math.hypot(q.x - p.x, q.y - p.y)
+        #             row.append(dist)
+        #     weighted_graph.append(row)
 
 
-        # return waypoints
+        return waypoints
 
 def main(args = None):
     rclpy.init(args = args)
